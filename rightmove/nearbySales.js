@@ -2,37 +2,37 @@ const puppeteer = require('puppeteer')
 const loadingSpinner = require('loading-spinner')
 
 async function RMnearbySales(URL, bedrooms, type) {
-        bedrooms = bedrooms.split(',').map(Number)
-        bedrooms[0] = bedrooms[0].toString()
-        bedrooms[1] = bedrooms[1].toString()
+    bedrooms = bedrooms.split(',').map(Number)
+    bedrooms[0] = bedrooms[0].toString()
+    bedrooms[1] = bedrooms[1].toString()
 
-        const browser = await puppeteer.launch({
-            headless: false,
-            args: [
-                // "--disable-gpu",
-                // "--disable-dev-shm-usage",
-                "--disable-setuid-sandbox",
-                "--no-sandbox",
-            ],
-        })
+    const browser = await puppeteer.launch({
+        headless: false,
+        args: [
+            // "--disable-gpu",
+            // "--disable-dev-shm-usage",
+            "--disable-setuid-sandbox",
+            "--no-sandbox",
+        ],
+    })
 
-        AllProperties = []
+    AllProperties = []
 
-        const page = await browser.newPage()
-        await page.setDefaultNavigationTimeout(0);
-        URL = "https://www.rightmove.co.uk/property-for-sale/search.html?searchLocation=" + URL + "&useLocationIdentifier=false&locationIdentifier=&buy=For+sale"
-        console.log('URL: ', URL);
-        let allSet = false
+    const page = await browser.newPage()
+    await page.setDefaultNavigationTimeout(0);
+    URL = "https://www.rightmove.co.uk/property-for-sale/search.html?searchLocation=" + URL + "&useLocationIdentifier=false&locationIdentifier=&buy=For+sale"
+    console.log('URL: ', URL);
+    let allSet = false
 
-        await page.goto(URL, {
-            timeout: 0
-        })
+    await page.goto(URL, {
+        timeout: 0
+    })
 
-        setUpSearchParameters(page, bedrooms[0], bedrooms[1], type)
-        
-        await page.screenshot({ path: 'screenshot.png' });
+    setUpSearchParameters(page, bedrooms[0], bedrooms[1], type)
+    
+    await page.screenshot({ path: 'screenshot.png' });
 
-        console.log('All properties: ', AllProperties.length);
+    console.log('All properties: ', AllProperties.length);
 }
 
 async function setUpSearchParameters(page, minBedroomValue, maxBedroomValue, propertyTypeValue) {
