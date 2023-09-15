@@ -1,6 +1,7 @@
 const express = require('express');
 const { RMnearbyRentals } = require('./rightmove/nearbyRentals');
 const { RMnearbySales } = require('./rightmove/nearbySales');
+const { ZPnearbySales } = require('./zoopla/nearbySales');
 const app = express()
 const argv = require('yargs').argv;
 
@@ -28,7 +29,12 @@ switch (source) {
 
     case 'zoopla':
         console.log('calling zoopla');
-
+        if (task === 'rentals') {
+            // nearbyRentals = require('./rightmove/nearbyRentals')
+            // RMnearbyRentals(location, beds, type)
+        } else if (task === 'sales') {
+            ZPnearbySales(location, beds, type)
+        }
         break;
 
     default:

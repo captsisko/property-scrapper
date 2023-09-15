@@ -1,7 +1,5 @@
 const puppeteer = require('puppeteer')
 
-console.log('Rightmove responding');
-
 async function RMnearbyRentals(postcode, bedrooms) {
 
     try {
