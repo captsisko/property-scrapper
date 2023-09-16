@@ -146,7 +146,7 @@ async function getReducedListings(page) {
             const linkElement = div.querySelector('a.rgd66w1');
             console.log(linkElement);
 
-            const priceElement = div.querySelector('p._1sftax52');
+            // const priceElement = div.querySelector('p._1sftax52');
             const reductionDetailsElement = div.querySelector('p._1sftax54');
             const bedroomsElement = div.querySelector('svg[href="#bedroom-medium"] + span');
             const bathroomsElement = div.querySelector('svg[href="#bathroom-medium"] + span');
@@ -154,7 +154,7 @@ async function getReducedListings(page) {
 
             return {
                 url: linkElement ? linkElement.href : null,
-                price: priceElement ? priceElement.textContent : null,
+                // price: priceElement ? priceElement.textContent : null,
                 reductionDetails: reductionDetailsElement ? reductionDetailsElement.textContent : null,
                 bedrooms: bedroomsElement ? bedroomsElement.textContent : null,
                 bathrooms: bathroomsElement ? bathroomsElement.textContent : null,
@@ -196,7 +196,7 @@ async function nextPage(page) {
     return false;
 }
 
-async function expand(reducedPropertiesData = null, page) {
+async function expand(reducedPropertiesData = null) {
     const MAX_CONCURRENT_PAGES = 5; // This is just an example, adjust based on your needs
     const browser = await puppeteer.launch({ 
         headless: false, 
@@ -206,16 +206,16 @@ async function expand(reducedPropertiesData = null, page) {
         if (index % MAX_CONCURRENT_PAGES === 0) {
             await new Promise(r => setTimeout(r, 2000)); // Give a delay
         }
-        // const page = await browser.newPage();
+        const page = await browser.newPage();
         // await page.setUserAgent('Mozilla/5.0 (Linux; U; Android 4.1.1; en-gb; Build/KLP) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30');
 
         // Error handling
         try {
-            await page.waitForTimeout(5000);  // wait for 5 seconds
+            // await page.waitForTimeout(5000);  // wait for 5 seconds
 
-            console.log('Going to: ', changeToHTTP(property.url));
-            await page.goto(await changeToHTTP(property.url), { 
-                timeout: 30000, 
+            console.log('Going to: ', property.url)
+            await page.goto(property.url, { 
+                timeout: 0, 
                 waitUntil: 'domcontentloaded'
                 // waitUntil: 'networkidle2'
             });
@@ -233,7 +233,7 @@ async function expand(reducedPropertiesData = null, page) {
         } catch (error) {
             console.error(`Error processing property: ${property.url}`, error)
         } finally {
-            // await page.close()
+            await page.close()
         }
     }));
     await browser.close();
