@@ -1,4 +1,9 @@
-const puppeteer = require('puppeteer')
+// const puppeteer = require('puppeteer')
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+
+puppeteer.use(StealthPlugin());
+
 const loadingSpinner = require('loading-spinner')
 
 async function ZPnearbySales(URL, bedrooms, type) {
@@ -139,7 +144,8 @@ async function getReducedListings(page) {
             const bathroomsElement = div.querySelector('svg[href="#bathroom-medium"] + span');
             
             return {
-                url: linkElement ? changeToHTTPFunc(linkElement.href) : null,
+                // url: linkElement ? changeToHTTPFunc(linkElement.href) : null,
+                url: linkElement ? linkElement.href : null,
                 reductionDetails: reductionDetailsElement ? reductionDetailsElement.textContent : null,
                 bedrooms: bedroomsElement ? bedroomsElement.textContent : null,
                 bathrooms: bathroomsElement ? bathroomsElement.textContent : null,
@@ -180,25 +186,27 @@ async function nextPage(page) {
 
 async function expand(reducedPropertiesData = null) {
     const browser = await puppeteer.launch({ 
-        headless: false, 
-        args: ['--no-sandbox'] 
+        headless: true,
+        args: ['--no-sandbox']
     });
 
     for (const property of reducedPropertiesData) {
-        const page = await browser.newPage();
 
         // Error handling
         try {
+            const page = await browser.newPage();
             console.log('Opening: ', property.url, ' ...');
-            await page.goto(property.url, { 
-                timeout: 0, 
-                waitUntil: 'domcontentloaded'
-            });
             
             await page.setUserAgent('Mozilla/5.0 (Linux; U; Android 4.1.1; en-gb; Build/KLP) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30');
-
+            await page.goto(property.url, { 
+                timeout: 0, 
+                // waitUntil: 'domcontentloaded'
+                waitUntil: 'networkidle0'
+            });
+            
             // Ensure the element is there before using it
-            await page.waitForSelector('script#__ZAD_TARGETING__');
+            // await page.waitForSelector('script#__ZAD_TARGETING__');
+            await page.waitForSelector('script#__ZAD_TARGETING__')//, { timeout: 60000 }); // waits for 60 seconds
             let content = await page.$eval('script#__ZAD_TARGETING__', el => el.textContent);
             let json = JSON.parse(content);
 
@@ -207,11 +215,12 @@ async function expand(reducedPropertiesData = null) {
             property.bedrooms = json.num_beds;
             property.bathrooms = json.num_baths;
             property.price = json.price;
+            await page.close();
         } catch (error) {
             console.error(`Error processing property: ${property.url}`, error);
+            const page = await browser.newPage();
         } finally {
             console.log('... closing!');
-            await page.close();
         }
     }
 
