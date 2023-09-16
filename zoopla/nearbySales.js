@@ -148,7 +148,7 @@ async function getReducedListings(page) {
                 url: linkElement ? linkElement.href : null,
                 reductionDetails: reductionDetailsElement ? reductionDetailsElement.textContent : null,
                 bedrooms: bedroomsElement ? bedroomsElement.textContent : null,
-                bathrooms: bathroomsElement ? bathroomsElement.textContent : null,
+                bathrooms: bathroomsElement ? bathroomsElement.textContent : null
             };
         });
     });
@@ -210,11 +210,15 @@ async function expand(reducedPropertiesData = null) {
             let content = await page.$eval('script#__ZAD_TARGETING__', el => el.textContent);
             let json = JSON.parse(content);
 
+            let formattedDate = await extractDate(property.reductionDetails)
+
             property.id = json.listing_id;
             property.postcode = json.outcode + ' ' + json.incode;
             property.bedrooms = json.num_beds;
             property.bathrooms = json.num_baths;
             property.price = json.price;
+            property.reductionDate = formattedDate
+            property.reductionDuration = Math.floor(await reductionDuration(formattedDate))
             await page.close();
         } catch (error) {
             console.error(`Error processing property: ${property.url}`, error);
@@ -277,6 +281,30 @@ async function changeToHTTP(url) {
         return url.replace('https://', 'http://');
     }
     return url;
+}
+
+async function extractDate(input) {
+    // const input = "4.5% Last reduced: 14th Jan 2023";
+
+    // Use a regex to extract day, month, and year
+    const match = input.match(/(\d+)(?:st|nd|rd|th)?\s+([A-Za-z]+)\s+(\d{4})/);
+
+    if (match) {
+        const day = match[1];
+        const monthName = match[2];
+        const year = match[3];
+
+        // Convert month name to its number
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const monthNumber = monthNames.indexOf(monthName) + 1;
+
+        // Format the date
+        const formattedDate = `${day.padStart(2, '0')}/${monthNumber.toString().padStart(2, '0')}/${year}`;
+        return formattedDate
+        console.log(formattedDate); // Expected output: 14/01/2023
+    } else {
+        console.log("Date format not found in the string.");
+    }
 }
 
 module.exports = { ZPnearbySales }
