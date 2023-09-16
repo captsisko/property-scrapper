@@ -19,36 +19,19 @@ async function ZPnearbySales(URL, bedrooms, type) {
     AllProperties = []
 
     let page = await browser.newPage()
-    /* const client = await page.target().createCDPSession();
-  
-    await client.send('Security.enable');
-  
-    client.on('Security.securityStateChanged', (securityDetails) => {
-      const { securityState } = securityDetails;
-      if (securityState === 'secure') {
-        console.log('The connection is secure.');
-      } else {
-        console.log('The connection is NOT secure.');
-      }
-    }); */
 
     await page.setDefaultNavigationTimeout(0);
-    URL2 = "https://www.zoopla.co.uk/for-sale/"
+    URL2 = "http://www.zoopla.co.uk/for-sale/"
     console.log('URL: ', await changeToHTTP(URL2));
-    // let allSet = false
 
     await page.goto(await changeToHTTP(URL2), {
         timeout: 0
     })
 
-    // return
     // to avoid "are you human" check
     await page.setUserAgent('Mozilla/5.0 (Linux; U; Android 4.1.1; en-gb; Build/KLP) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30');
-    // await page.setUserAgent('Mozilla/5.0 (Linux; U; Android 4.1.1; en-gb; Build/KLP) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30');
-    // await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36');
-    // surveyWatch(page)
     dismissCookiesiFrame(page)
-// return
+
     // set area to serach and push enter
     await page.type('input#autosuggest-input', URL)
     await page.keyboard.press('Enter');
@@ -67,6 +50,7 @@ async function ZPnearbySales(URL, bedrooms, type) {
     console.log('All properties: ', AllProperties.length);
     AllProperties = await expand(AllProperties, page)
     console.log('Finally => ', AllProperties);
+    console.log('Completed all', AllProperties.length, 'expansion()s.');
 }
 
 async function dismissCookiesiFrame(page) {
@@ -137,34 +121,32 @@ async function setUpSearchParameters(page, minBedroomValue, maxBedroomValue, pro
 async function getReducedListings(page) {
     await page.waitForSelector('div._1c58w6u2');
 
-    const reducedPropertiesData = await page.$$eval('div._1c58w6u2', divs => 
-        divs.filter(div => {
-            // Check if the property has been reduced
+    const reducedPropertiesData = await page.$$eval('div._1c58w6u2', (divs) => {
+        const changeToHTTPFunc = (url) => {
+            if (url.startsWith('https://')) {
+                return url.replace('https://', 'http://');
+            }
+            return url;
+        };
+
+        return divs.filter(div => {
             const reducedElement = div.querySelector('span._1sftax55');
             return reducedElement && reducedElement.textContent.includes('%');
         }).map(div => {
             const linkElement = div.querySelector('a.rgd66w1');
-            console.log(linkElement);
-
-            // const priceElement = div.querySelector('p._1sftax52');
             const reductionDetailsElement = div.querySelector('p._1sftax54');
             const bedroomsElement = div.querySelector('svg[href="#bedroom-medium"] + span');
             const bathroomsElement = div.querySelector('svg[href="#bathroom-medium"] + span');
-            // const livingRoomsElement = div.querySelector('svg[href="#living-room-medium"] + span');
-
+            
             return {
-                url: linkElement ? linkElement.href : null,
-                // price: priceElement ? priceElement.textContent : null,
+                url: linkElement ? changeToHTTPFunc(linkElement.href) : null,
                 reductionDetails: reductionDetailsElement ? reductionDetailsElement.textContent : null,
                 bedrooms: bedroomsElement ? bedroomsElement.textContent : null,
                 bathrooms: bathroomsElement ? bathroomsElement.textContent : null,
-                // livingRooms: livingRoomsElement ? livingRoomsElement.textContent : null
-                // Add any other fields you need
             };
-        })
-    );
+        });
+    });
 
-    // console.log(reducedPropertiesData);
     console.log('. . . counting: ', reducedPropertiesData.length);
     return reducedPropertiesData;
 }
@@ -197,48 +179,46 @@ async function nextPage(page) {
 }
 
 async function expand(reducedPropertiesData = null) {
-    const MAX_CONCURRENT_PAGES = 5; // This is just an example, adjust based on your needs
     const browser = await puppeteer.launch({ 
         headless: false, 
         args: ['--no-sandbox'] 
     });
-    await Promise.all(reducedPropertiesData.map(async (property, index) => {
-        if (index % MAX_CONCURRENT_PAGES === 0) {
-            await new Promise(r => setTimeout(r, 2000)); // Give a delay
-        }
+
+    for (const property of reducedPropertiesData) {
         const page = await browser.newPage();
-        // await page.setUserAgent('Mozilla/5.0 (Linux; U; Android 4.1.1; en-gb; Build/KLP) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30');
 
         // Error handling
         try {
-            // await page.waitForTimeout(5000);  // wait for 5 seconds
-
-            console.log('Going to: ', property.url)
+            console.log('Opening: ', property.url, ' ...');
             await page.goto(property.url, { 
                 timeout: 0, 
                 waitUntil: 'domcontentloaded'
-                // waitUntil: 'networkidle2'
             });
+            
+            await page.setUserAgent('Mozilla/5.0 (Linux; U; Android 4.1.1; en-gb; Build/KLP) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30');
 
             // Ensure the element is there before using it
-            await page.waitForSelector('script#__ZAD_TARGETING__')
-            let content = await page.$eval('script#__ZAD_TARGETING__', el => el.textContent)
-            let json = JSON.parse(content)
+            await page.waitForSelector('script#__ZAD_TARGETING__');
+            let content = await page.$eval('script#__ZAD_TARGETING__', el => el.textContent);
+            let json = JSON.parse(content);
 
-            property.id = json.listing_id
-            property.postcode = json.outcode + ' ' + json.incode
-            property.bedrooms = json.num_beds
-            property.bathrooms = json.num_baths
-            property.price = json.price
+            property.id = json.listing_id;
+            property.postcode = json.outcode + ' ' + json.incode;
+            property.bedrooms = json.num_beds;
+            property.bathrooms = json.num_baths;
+            property.price = json.price;
         } catch (error) {
-            console.error(`Error processing property: ${property.url}`, error)
+            console.error(`Error processing property: ${property.url}`, error);
         } finally {
-            await page.close()
+            console.log('... closing!');
+            await page.close();
         }
-    }));
+    }
+
     await browser.close();
     return reducedPropertiesData;
 }
+
 
 async function reductionDuration(date = null) {
     if (date === 'yesterday') {
