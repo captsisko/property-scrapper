@@ -52,10 +52,11 @@ async function ZPnearbySales(URL, bedrooms, type) {
         page = await nextPage(page)
     } while (page);
     
-    console.log('All properties: ', AllProperties.length);
+    // console.log('All properties: ', AllProperties.length);
     AllProperties = await expand(AllProperties, page)
-    console.log('Finally => ', AllProperties);
-    console.log('Completed all', AllProperties.length, 'expansion()s.');
+    // console.log('Finally => ', AllProperties);
+    // console.log('Completed all', AllProperties.length, 'expansion()s.');
+    return AllProperties
 }
 
 async function dismissCookiesiFrame(page) {

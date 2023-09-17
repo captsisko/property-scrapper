@@ -39,10 +39,11 @@ async function RMnearbySales(URL, bedrooms, type) {
         page = await nextPage(page)
     } while (page);
     
-    console.log('All properties: ', AllProperties.length);
-    console.log(page);
+    // console.log('All properties: ', AllProperties.length);
+    // console.log(page);
     AllProperties = await expand(AllProperties, page)
-    console.log(AllProperties);
+    // console.log(AllProperties);
+    return AllProperties
 }
 
 async function setUpSearchParameters(page, minBedroomValue, maxBedroomValue, propertyTypeValue) {
