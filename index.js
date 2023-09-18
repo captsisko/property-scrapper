@@ -19,22 +19,22 @@ console.log("***********************************")
 switch (source) {
     case 'rightmove':
         console.log('calling rightmove');
-        if (task === 'rentals') {
-            // nearbyRentals = require('./rightmove/nearbyRentals')
-            RMnearbyRentals(location, beds, type)
-        } else if (task === 'sales') {
+        // if (task === 'rentals') {
+        //     // nearbyRentals = require('./rightmove/nearbyRentals')
+        //     RMnearbyRentals(location, beds, type)
+        // } else if (task === 'sales') {
             RMnearbySales(location, beds, type)
-        }
+        // }
         break;
 
     case 'zoopla':
         console.log('calling zoopla');
-        if (task === 'rentals') {
+        // if (task === 'rentals') {
             // nearbyRentals = require('./rightmove/nearbyRentals')
             // RMnearbyRentals(location, beds, type)
-        } else if (task === 'sales') {
+        // } else if (task === 'sales') {
             ZPnearbySales(location, beds, type)
-        }
+        // }
         break;
 
     default:
