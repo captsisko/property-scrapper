@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  web:
+    container_name: property-scrapper-web
+    build: .
+    ports:
+      - "3007:3000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_HOST: db
+
+  db:
+    container_name: property-scrapper-db
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: scrappings
+      MYSQL_USER: scrapper
+      MYSQL_PASSWORD: password
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+volumes:
+  mysql-data:
