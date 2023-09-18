@@ -101,6 +101,8 @@ async function setUpSearchParameters(page, minBedroomValue, maxBedroomValue, pro
         await page.click('button#Detached')
         await page.click('button#Bungalows')
         await page.click('button#Semi-detached')
+    } else if (propertyTypeValue === 'flats') {
+        await page.click('button#Flats')
     }
 
     // set the min and max room values
