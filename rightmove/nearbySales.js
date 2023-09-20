@@ -1,7 +1,7 @@
 const puppeteer = require('puppeteer')
 const loadingSpinner = require('loading-spinner')
 
-async function RMnearbySales(URL, bedrooms, type) {
+async function RMnearbySales(URL, bedrooms, type, filterBy) {
     bedrooms = bedrooms.split(',').map(Number)
     bedrooms[0] = bedrooms[0].toString()
     bedrooms[1] = bedrooms[1].toString()
@@ -33,7 +33,7 @@ async function RMnearbySales(URL, bedrooms, type) {
 
     do {
         // filter results for reduced properties
-        AllProperties = [...AllProperties, await getReducedListings(page)].flat()
+        AllProperties = [...AllProperties, await getReducedListings(page, filterBy)].flat()
 
         // go to next page
         page = await nextPage(page)
@@ -89,24 +89,28 @@ async function setUpSearchParameters(page, minBedroomValue, maxBedroomValue, pro
     await page.click('button.filtersBar-filter.filtersBar-more')
 }
 
-async function getReducedListings(page) {
-    const reducedPropertiesData = await page.$$eval('div.l-searchResult.is-list', divs => 
+async function getReducedListings(page, filterBy = 'reduced') {
+    const reducedPropertiesData = await page.$$eval('div.l-searchResult.is-list', (divs, filterBy) =>  // <-- Notice the added filterBy here
         divs.filter(div => {
             const spanElement = div.querySelector('span.propertyCard-branchSummary-addedOrReduced');
-            return spanElement && spanElement.textContent.includes('Reduced');
+            if (filterBy === 'not-reduced') {
+                return spanElement && !spanElement.textContent.includes('Reduced');                
+            } else if (filterBy === 'reduced') {
+                return spanElement //&& spanElement.textContent.includes('Reduced');
+            }
         }).map(div => {
             const linkElement = div.querySelector('a.propertyCard-link');
-
             return {
                 url: linkElement ? linkElement.href : null,
+                filter: filterBy
                 // Add any other fields you need
             };
-        })
+        }), filterBy  // <-- And here we pass filterBy as an argument
     );
 
-    // console.log(reducedPropertiesData);
-    return reducedPropertiesData
+    return reducedPropertiesData;
 }
+
 
 async function nextPage(page) {
     let buttonNext = await page.$('button.pagination-direction--next')
@@ -116,8 +120,6 @@ async function nextPage(page) {
         await buttonNext.click('button.pagination-direction--next')
         await page.waitForSelector('div#propertySearch-results-container')
         await page.waitForSelector('button.pagination-direction--next')
-    
-        console.log('-------------------------------------------------')
         return page
     } else {
         console.log("=============> End of results");
@@ -156,10 +158,10 @@ async function expand(reducedPropertiesData, page) {
                         await pageModel.propertyData.bathrooms : null
         property.price = await pageModel.propertyData.mortgageCalculator.price ? 
                         await pageModel.propertyData.mortgageCalculator.price : null
-        let reductionDate = await pageModel.propertyData.listingHistory.listingUpdateReason.match(/(\d{2}\/\d{2}\/\d{4})/) ? 
+        let date = await pageModel.propertyData.listingHistory.listingUpdateReason.match(/(\d{2}\/\d{2}\/\d{4})/) ? 
                             await pageModel.propertyData.listingHistory.listingUpdateReason.match(/(\d{2}\/\d{2}\/\d{4})/)[0] : await pageModel.propertyData.listingHistory.listingUpdateReason.split(' ')[1]
-        property.reductionDate = reductionDate
-        property.reductionDuration = Math.floor(await reductionDuration(reductionDate))
+        property.date = date
+        property.duration = Math.floor(await reductionDuration(date))
     }
 
     return reducedPropertiesData
