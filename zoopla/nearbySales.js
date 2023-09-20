@@ -6,7 +6,7 @@ puppeteer.use(StealthPlugin());
 
 const loadingSpinner = require('loading-spinner')
 
-async function ZPnearbySales(URL, bedrooms, type) {
+async function ZPnearbySales(URL, bedrooms, type, filter) {
     bedrooms = bedrooms.split(',').map(Number)
     bedrooms[0] = bedrooms[0].toString()
     bedrooms[1] = bedrooms[1].toString()
@@ -46,7 +46,7 @@ async function ZPnearbySales(URL, bedrooms, type) {
 
     do {
         // filter results for reduced properties
-        AllProperties = [...AllProperties, await getReducedListings(page)].flat()
+        AllProperties = [...AllProperties, await getReducedListings(page, filter)].flat()
         
         // go to next page
         page = await nextPage(page)
@@ -125,10 +125,10 @@ async function setUpSearchParameters(page, minBedroomValue, maxBedroomValue, pro
     await page.keyboard.press('Enter');
 }
 
-async function getReducedListings(page) {
+async function getReducedListings(page, filter='reduced') {
     await page.waitForSelector('div._1c58w6u2');
 
-    const reducedPropertiesData = await page.$$eval('div._1c58w6u2', (divs) => {
+    const reducedPropertiesData = await page.$$eval('div._1c58w6u2', (divs, filter) => {
         const changeToHTTPFunc = (url) => {
             if (url.startsWith('https://')) {
                 return url.replace('https://', 'http://');
@@ -137,53 +137,64 @@ async function getReducedListings(page) {
         };
 
         return divs.filter(div => {
-            const reducedElement = div.querySelector('span._1sftax55');
-            return reducedElement && reducedElement.textContent.includes('%');
+            const listedItem = div.querySelector('p._1sftax54._1dgm2fc9') ? div.querySelector('p._1sftax54._1dgm2fc9') : div.querySelector('li._65yptp1')
+            if (filter === 'reduced') {
+                return listedItem && listedItem.textContent.includes('reduced');
+            } else if (filter === 'not-reduced') {
+                return listedItem && listedItem.textContent.includes('Listed')
+            }
         }).map(div => {
             const linkElement = div.querySelector('a.rgd66w1');
-            const reductionDetailsElement = div.querySelector('p._1sftax54');
+            const detailsElement = div.querySelector('p._1sftax54') ? div.querySelector('p._1sftax54') : div.querySelector('li._65yptp1')
             const bedroomsElement = div.querySelector('svg[href="#bedroom-medium"] + span');
             const bathroomsElement = div.querySelector('svg[href="#bathroom-medium"] + span');
             
             return {
                 // url: linkElement ? changeToHTTPFunc(linkElement.href) : null,
                 url: linkElement ? linkElement.href : null,
-                reductionDetails: reductionDetailsElement ? reductionDetailsElement.textContent : null,
+                reductionDetails: detailsElement ? detailsElement.textContent : null,
                 bedrooms: bedroomsElement ? bedroomsElement.textContent : null,
-                bathrooms: bathroomsElement ? bathroomsElement.textContent : null
+                bathrooms: bathroomsElement ? bathroomsElement.textContent : null,
+                filter: filter
             };
         });
-    });
+    }, filter);
 
     console.log('. . . counting: ', reducedPropertiesData.length);
     return reducedPropertiesData;
 }
 
 async function nextPage(page) {
-    // Wait for the anchor containing a div with the text "Next" to be rendered
-    await page.waitForXPath("//a[div/div[text()='Next']]", {timeout: 10000});
+    try {
 
-    // Select the button using its text content
-    const nextButton = await page.$x("//a[div/div[text()='Next']]");
+        // Wait for the anchor containing a div with the text "Next" to be rendered
+        await page.waitForXPath("//a[div/div[text()='Next']]", {timeout: 10000});
 
-    if (nextButton && nextButton.length > 0) {
-        console.log('Next button found');
+        // Select the button using its text content
+        const nextButton = await page.$x("//a[div/div[text()='Next']]");
 
-        const isDisabled = await page.evaluate(button => button.getAttribute('aria-disabled') === 'true', nextButton[0]);
+        if (nextButton && nextButton.length > 0) {
+            console.log('Next button found');
 
-        if (!isDisabled) {
-            await nextButton[0].click();
-            console.log('Navigated to the next page.');
-            await page.waitForTimeout(3000);  // Adjust as needed
-            return page;
+            const isDisabled = await page.evaluate(button => button.getAttribute('aria-disabled') === 'true', nextButton[0]);
+
+            if (!isDisabled) {
+                await nextButton[0].click();
+                console.log('Navigated to the next page.');
+                await page.waitForTimeout(3000);  // Adjust as needed
+                return page;
+            } else {
+                console.log('The "Next" button is disabled.');
+            }
         } else {
-            console.log('The "Next" button is disabled.');
+            console.log('"Next" button not found.');
         }
-    } else {
-        console.log('"Next" button not found.');
-    }
 
-    return false;
+        return false;
+                
+    } catch (error) {
+            
+    }
 }
 
 async function expand(reducedPropertiesData = null) {
@@ -219,8 +230,8 @@ async function expand(reducedPropertiesData = null) {
             property.bedrooms = json.num_beds;
             property.bathrooms = json.num_baths;
             property.price = json.price;
-            property.reductionDate = formattedDate
-            property.reductionDuration = Math.floor(await reductionDuration(formattedDate))
+            property.date = formattedDate
+            property.duration = Math.floor(await reductionDuration(formattedDate))
             await page.close();
         } catch (error) {
             console.error(`Error processing property: ${property.url}`, error);
@@ -306,6 +317,7 @@ async function extractDate(input) {
         console.log(formattedDate); // Expected output: 14/01/2023
     } else {
         console.log("Date format not found in the string.");
+        return null
     }
 }
 
