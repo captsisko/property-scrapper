@@ -8,14 +8,10 @@ services:
       - "3007:3000"
     depends_on:
       - db
-    command: [ "--source=rightmove", "--type=houses", "--beds=1,2", "--task=sales", "--location=Stockton-on-Tees" ]
     environment:
       DATABASE_HOST: db
-      SOURCE_ARG: "zoopla"  # default value can be empty or a specific value
-      TYPE_ARG: "flats"    # default value can be empty or a specific value
-      BEDS_ARG: "2,3"    # default value can be empty or a specific value
-      TASK_ARG: "sales"    # default value can be empty or a specific value
-      LOCATION_ARG: "Stockton-on-tees"  # default value can be empty or a specific value
+    command: ["sh", "-c", "while :; do sleep 1; done"]
+
 
   db:
     container_name: property-scrapper-db

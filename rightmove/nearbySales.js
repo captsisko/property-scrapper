@@ -7,13 +7,14 @@ async function RMnearbySales(URL, bedrooms, type, filterBy) {
     bedrooms[1] = bedrooms[1].toString()
 
     const browser = await puppeteer.launch({
-        headless: false,
-        args: [
-            // "--disable-gpu",
-            // "--disable-dev-shm-usage",
-            "--disable-setuid-sandbox",
-            "--no-sandbox",
-        ],
+        headless: true,
+        // args: [
+        //     '--no-sandbox',
+        //     '--disable-setuid-sandbox',
+        //     '--disable-dev-shm-usage'
+        // ],
+        // args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage']
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
     })
 
     AllProperties = []
@@ -46,6 +47,7 @@ async function RMnearbySales(URL, bedrooms, type, filterBy) {
 }
 
 async function setUpSearchParameters(page, minBedroomValue, maxBedroomValue, propertyTypeValue) {
+    await page.screenshot({ path: 'screenshot-RightMove.png' });
 
     // dismiss cookies modal if it comes up
     if (await page.waitForSelector('#onetrust-banner-sdk', { timeout: 5000 })) {
@@ -141,7 +143,7 @@ async function expand(reducedPropertiesData, page) {
     let newpage = await browser.newPage()
 
     for (const property of reducedPropertiesData) {
-        console.log('Visiting: ', property.url);
+        console.log('Calling: ', property.url, ' ...');
         let response = await newpage.goto(property.url, {
             timeout: 0
         });
@@ -162,6 +164,7 @@ async function expand(reducedPropertiesData, page) {
                             await pageModel.propertyData.listingHistory.listingUpdateReason.match(/(\d{2}\/\d{2}\/\d{4})/)[0] : await pageModel.propertyData.listingHistory.listingUpdateReason.split(' ')[1]
         property.date = date
         property.duration = Math.floor(await reductionDuration(date))
+        console.log('... closing!');
     }
 
     return reducedPropertiesData

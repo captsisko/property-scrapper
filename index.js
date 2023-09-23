@@ -2,7 +2,7 @@ const express = require('express');
 const { RMnearbyRentals } = require('./rightmove/nearbyRentals');
 const { RMnearbySales } = require('./rightmove/nearbySales');
 const { ZPnearbySales } = require('./zoopla/nearbySales');
-const app = express()
+// const app = express()
 const argv = require('yargs').argv;
 console.log('Parameters: ', argv);
 
@@ -44,8 +44,8 @@ switch (source) {
         break;
 }
 
-app.get('/', function (req, res) {
-    res.send('Hello World')
-})
+// app.get('/', function (req, res) {
+//     res.send('Hello World')
+// })
 
-app.listen(3000)
+// app.listen(3000)
