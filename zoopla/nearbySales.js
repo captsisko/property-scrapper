@@ -34,12 +34,12 @@ async function ZPnearbySales(URL, bedrooms, type, filter) {
     })
 
     // to avoid "are you human" check
-    await page.setViewport({ width: 1280, height: 720 });
+    // await page.setViewport({ width: 1280, height: 720 });
     await page.setUserAgent('Mozilla/5.0 (Linux; U; Android 4.1.1; en-gb; Build/KLP) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30');
     // await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537');
     dismissCookiesiFrame(page)
 
-    await page.screenshot({ path: 'screenshot.png' });
+    await page.screenshot({ path: 'screenshot-zoopla.png' });
 
     // set area to serach and push enter
     await page.type('input#autosuggest-input', URL)

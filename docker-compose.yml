@@ -10,6 +10,8 @@ services:
       - db
     environment:
       DATABASE_HOST: db
+    volumes:
+      - .:/app
     command: ["sh", "-c", "while :; do sleep 1; done"]
 
 
